@@ -1,38 +1,22 @@
-name: Auto PR and Merge
+name: Auto Merge PR from Dev to Main
 
 on:
-  push:
-    branches:
-      - dev
-
-env:
-  NODE_VERSION: '20.x'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - labeled
 
 jobs:
-  build:
+  merge:
     runs-on: ubuntu-latest
     steps:
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          ref: dev
-      - name: Create PR to main
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          title: Auto PR from dev to main
-          body: This pull request is automatically generated from the dev branch.
-      - name: Wait for 2 minutes
-        run: sleep 120
       - name: Merge PR to main
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          merge: true
-          merge_method: squash
-          delete_branch: true
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git fetch origin ${{ github.event.pull_request.head.ref }}
+          git merge --no-ff --no-edit ${{ github.event.pull_request.head.ref }}
+          git push origin main
